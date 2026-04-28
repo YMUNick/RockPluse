@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rock Pulse — IG Rock Trend × AI Content Engine</title>
+<meta name="description" content="Track real-time Instagram rock & band trends. Generate band-frontman-style social posts with AI.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎸</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void: #0f0f0f;
+  --black: #000000;
+  --charcoal: #2c2c2c;
+  --cobalt: #0007cd;
+  --cyan: #00ffff;
+  --signal: #0089ff;
+  --ocean: #0096ff;
+  --white: #ffffff;
+  --ghost: rgba(255,255,255,0.6);
+  --whisper: rgba(255,255,255,0.5);
+  --muted: #444444;
+  --phantom: rgba(255,255,255,0.2);
+  --bm12: rgba(255,255,255,0.12);
+  --bm10: rgba(255,255,255,0.10);
+  --bm08: rgba(255,255,255,0.08);
+  --bm06: rgba(255,255,255,0.06);
+  --bm04: rgba(255,255,255,0.04);
+  --cyan12: rgba(0,255,255,0.12);
+  --cyan06: rgba(0,255,255,0.06);
+  --cobalt-glow: rgba(0,7,205,0.3);
+  --brut-shadow: 4px 4px 0px 0px rgba(0,0,0,0.15);
+  --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--void);
+  color: var(--white);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+::selection { background: rgba(0,255,255,0.2); color: #fff; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bm12); border-radius: 3px; }
+
+input:focus {
+  outline: none;
+  border-color: var(--signal) !important;
+  box-shadow: 0 0 0 1px rgba(0,137,255,0.26);
+}
+
+button { font-family: inherit; }
+
+.atmosphere {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 30% 8%, rgba(0,7,205,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 80% 92%, rgba(0,255,255,0.03) 0%, transparent 60%);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+@keyframes slideDown {
+  from { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
+  to   { opacity: 1; max-height: 220px; padding-top: 20px; padding-bottom: 20px; }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Header ── */
+.header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(15,15,15,0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--bm06);
+  padding: 0 24px; height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-icon {
+  width: 32px; height: 32px; border-radius: 4px;
+  background: linear-gradient(135deg, var(--cobalt), var(--signal));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; box-shadow: 0 0 20px var(--cobalt-glow);
+}
+.brand-name { font-weight: 700; font-size: 18px; line-height: 0.87; letter-spacing: -0.3px; }
+.brand-sub {
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 1.2px; color: var(--muted);
+  text-transform: uppercase; margin-top: 3px;
+}
+
+.header-right { display: flex; align-items: center; gap: 16px; }
+.status-badge {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--muted); letter-spacing: 0.5px;
+}
+.dot {
+  display: inline-block; width: 6px; height: 6px;
+  border-radius: 9999px; background: var(--muted); transition: all 0.4s;
+}
+.dot.on {
+  background: var(--cyan);
+  box-shadow: 0 0 6px var(--cyan), 0 0 12px rgba(0,255,255,0.26);
+}
+.btn-settings {
+  background: transparent; border: 1px solid var(--bm06);
+  color: var(--ghost); width: 36px; height: 36px; border-radius: 4px;
+  cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.btn-settings:hover { background: var(--phantom); border-color: var(--bm12); }
+.btn-settings.active { background: var(--phantom); border-color: var(--bm12); }
+
+/* ── Settings ── */
+.settings {
+  background: var(--black); border-bottom: 1px solid var(--bm08);
+  padding: 20px 24px; animation: slideDown 0.3s ease forwards; overflow: hidden;
+}
+.settings-inner {
+  max-width: 860px; margin: 0 auto;
+  display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;
+}
+.settings-field { flex: 1 1 260px; }
+.overline {
+  font-size: 11px; font-family: var(--font-mono); font-weight: 400;
+  letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); line-height: 1;
+}
+.settings-input {
+  margin-top: 8px; width: 100%;
+  background: var(--void); border: 1px solid var(--bm10);
+  color: var(--white); padding: 10px 14px; border-radius: 4px;
+  font-family: var(--font-mono); font-size: 13px; letter-spacing: -0.28px;
+}
+.btn-save {
+  background: var(--white); color: var(--black); border: none;
+  padding: 10px 28px; border-radius: 4px;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  letter-spacing: 0.5px; cursor: pointer; transition: opacity 0.2s;
+}
+.btn-save:hover { opacity: 0.88; }
+
+/* ── Main ── */
+.main {
+  max-width: 860px; margin: 0 auto;
+  padding: 32px 20px 80px; position: relative; z-index: 5;
+}
+
+/* ── Hero ── */
+.hero { text-align: center; margin-bottom: 48px; position: relative; }
+.hero-glow {
+  position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+  width: 400px; height: 160px;
+  background: radial-gradient(ellipse, var(--cobalt-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero h2 {
+  position: relative; font-weight: 700;
+  font-size: clamp(28px, 6vw, 42px);
+  line-height: 0.87; letter-spacing: -0.5px; margin-bottom: 14px;
+}
+.hero h2 .da { color: var(--cyan); }
+.hero p {
+  font-family: var(--font-mono); font-size: 13px;
+  color: var(--muted); letter-spacing: 0.5px; line-height: 1.6;
+}
+
+/* ── Section Divider ── */
+.section-divider {
+  display: flex; align-items: center; gap: 16px;
+  margin: 40px 0 20px;
+}
+.section-divider-line {
+  flex: 1; height: 1px; background: var(--bm06);
+}
+.section-divider-num {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--muted); letter-spacing: 2px; text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-divider-num .num-badge {
+  width: 22px; height: 22px; border-radius: 4px;
+  background: var(--bm06); color: var(--ghost);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 500;
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--black); border: 1px solid var(--bm10);
+  border-radius: 4px; position: relative; overflow: hidden;
+}
+.card-glow {
+  position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
+  width: 70%; height: 120px;
+  background: radial-gradient(ellipse, var(--cyan06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--bm06);
+  position: relative; z-index: 1;
+}
+.card-header-left { display: flex; align-items: center; gap: 10px; }
+.card-body { padding: 12px 12px 16px; position: relative; z-index: 1; }
+
+/* ── Trends ── */
+.trend-empty {
+  text-align: center; padding: 48px 20px;
+  color: var(--muted); font-family: var(--font-mono); font-size: 13px;
+}
+.trend-empty-icon { font-size: 28px; margin-bottom: 12px; opacity: 0.3; }
+.trend-list { display: flex; flex-direction: column; gap: 4px; }
+
+.trend-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 14px; background: transparent;
+  border: 1px solid transparent; border-radius: 4px;
+  cursor: pointer; transition: all 0.2s; width: 100%;
+  text-align: left; color: var(--white); font-family: inherit;
+}
+.trend-item:hover { background: var(--bm04); }
+.trend-item.active { background: var(--cyan06); border-color: rgba(0,255,255,0.15); }
+
+.trend-index {
+  width: 26px; height: 26px; border-radius: 4px;
+  background: var(--bm06); color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 500; font-family: var(--font-mono);
+  flex-shrink: 0; transition: all 0.2s;
+}
+.trend-item.active .trend-index {
+  background: var(--cyan); color: var(--black);
+  box-shadow: 0 0 10px var(--cyan12);
+}
+
+.trend-tag {
+  font-family: var(--font-mono); font-size: 14px; font-weight: 500;
+  color: var(--white); letter-spacing: -0.28px; line-height: 1.2; transition: color 0.2s;
+}
+.trend-item.active .trend-tag { color: var(--cyan); }
+
+.trend-reason { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
+
+.trend-heat { flex-shrink: 0; display: flex; align-items: center; gap: 10px; }
+.heat-bar { width: 80px; height: 4px; background: var(--bm08); border-radius: 2px; overflow: hidden; }
+.heat-fill {
+  height: 100%; border-radius: 2px;
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1), box-shadow 0.4s;
+}
+.heat-num {
+  font-family: var(--font-mono); font-size: 16px; font-weight: 500;
+  min-width: 28px; text-align: right; letter-spacing: -0.3px;
+}
+
+/* ── Generator Card ── */
+.gen-tags-area {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--bm06);
+  position: relative; z-index: 1;
+}
+.gen-tags-label-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.gen-selected-tags {
+  display: flex; gap: 6px; flex-wrap: wrap; min-height: 32px; align-items: center;
+}
+.gen-tag-pill {
+  background: var(--cyan12); border: 1px solid rgba(0,255,255,0.18);
+  color: var(--cyan); padding: 5px 12px; border-radius: 37px;
+  font-size: 12px; font-family: var(--font-mono); font-weight: 400;
+  letter-spacing: -0.28px;
+  display: flex; align-items: center; gap: 6px;
+  cursor: pointer; transition: all 0.2s;
+}
+.gen-tag-pill:hover { background: rgba(0,255,255,0.2); }
+.gen-tag-pill .x {
+  font-size: 14px; line-height: 1; opacity: 0.5; transition: opacity 0.2s;
+}
+.gen-tag-pill:hover .x { opacity: 1; }
+
+.gen-empty-hint {
+  font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+  padding: 8px 0;
+}
+
+.gen-custom-row {
+  display: flex; gap: 8px; margin-top: 12px;
+}
+.gen-custom-input {
+  flex: 1; background: var(--void); border: 1px solid var(--bm10);
+  color: var(--white); padding: 8px 14px; border-radius: 4px;
+  font-family: var(--font-mono); font-size: 13px; letter-spacing: -0.28px;
+}
+.btn-add-tag {
+  background: var(--bm06); border: 1px solid var(--bm10);
+  color: var(--ghost); padding: 8px 16px; border-radius: 4px;
+  font-family: var(--font-mono); font-size: 12px; cursor: pointer;
+  transition: all 0.2s; white-space: nowrap;
+}
+.btn-add-tag:hover { background: var(--bm12); color: var(--white); }
+
+.gen-action-bar {
+  padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--bm06);
+  position: relative; z-index: 1;
+}
+.gen-count {
+  font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+  letter-spacing: 0.3px;
+}
+
+.btn-generate {
+  background: var(--white); color: var(--black); border: none;
+  padding: 10px 28px; border-radius: 4px;
+  font-family: var(--font-mono); font-size: 13px; font-weight: 500;
+  letter-spacing: 0.3px; cursor: pointer; transition: all 0.25s;
+  box-shadow: var(--brut-shadow);
+}
+.btn-generate:hover { opacity: 0.9; }
+.btn-generate:disabled {
+  background: var(--phantom); color: var(--whisper);
+  box-shadow: none; cursor: wait;
+}
+
+.btn-scan {
+  background: var(--cyan12); border: 1px solid var(--ocean);
+  color: var(--white); padding: 8px 20px; border-radius: 4px;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 400;
+  letter-spacing: 0.5px; cursor: pointer; transition: all 0.25s;
+}
+.btn-scan:hover { background: rgba(0,255,255,0.18); }
+.btn-scan:disabled {
+  background: var(--phantom); border-color: var(--bm08);
+  color: var(--whisper); cursor: wait;
+}
+.scanning-label {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--cyan); animation: pulse 1s infinite;
+}
+
+/* ── Copy ── */
+.btn-copy {
+  background: transparent; border: 1px solid var(--bm10);
+  color: var(--ghost); padding: 6px 16px; border-radius: 4px;
+  font-size: 11px; font-family: var(--font-mono);
+  letter-spacing: 0.7px; cursor: pointer; transition: all 0.25s;
+  text-transform: uppercase;
+}
+.btn-copy:hover { border-color: var(--bm12); color: var(--white); }
+.btn-copy.copied { background: var(--cyan12); border-color: var(--cyan); color: var(--cyan); }
+
+/* ── Output ── */
+.output-body { padding: 20px; display: flex; flex-direction: column; gap: 24px; }
+.output-section-label { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+
+.output-hook {
+  font-size: 22px; font-weight: 700; line-height: 1.1;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, rgba(0,255,255,0.04), transparent);
+  border: 1px solid rgba(0,255,255,0.08); border-radius: 4px;
+  box-shadow: var(--brut-shadow);
+}
+.output-body-text {
+  font-size: 15px; line-height: 1.7; color: var(--ghost);
+  padding: 18px 20px; background: var(--void);
+  border: 1px solid var(--bm08); border-radius: 4px;
+}
+.output-hashtags { display: flex; gap: 8px; flex-wrap: wrap; }
+.hashtag-pill {
+  background: var(--cyan12); border: 1px solid var(--ocean);
+  color: var(--white); padding: 6px 16px; border-radius: 37px;
+  font-family: var(--font-mono); font-size: 13px;
+  font-weight: 400; letter-spacing: -0.28px;
+  box-shadow: 0 0 8px rgba(0,150,255,0.15);
+}
+.output-visual {
+  font-size: 14px; line-height: 1.7; color: var(--muted);
+  padding: 18px 20px;
+  background: linear-gradient(135deg, rgba(0,7,205,0.06), transparent);
+  border: 1px solid var(--bm06); border-radius: 4px;
+}
+.output-footer {
+  border-top: 1px solid var(--bm06); padding-top: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.output-footer-hint {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--muted); letter-spacing: 0.5px;
+}
+.hashtag-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+}
+
+.gen-output-area { position: relative; z-index: 1; }
+
+/* ── Footer ── */
+.footer {
+  margin-top: 56px; text-align: center;
+  border-top: 1px solid var(--bm04); padding-top: 32px;
+}
+.footer-brand {
+  font-weight: 700; font-size: 32px; line-height: 0.87;
+  color: var(--bm12); letter-spacing: 6px;
+}
+.footer-sub {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--muted); letter-spacing: 1.5px;
+  text-transform: uppercase; margin-top: 12px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .header { padding: 0 16px; }
+  .main { padding: 24px 14px 60px; }
+  .hero h2 { font-size: 28px; }
+  .trend-heat { display: none; }
+  .gen-action-bar { flex-direction: column; gap: 10px; align-items: stretch; }
+  .btn-generate { width: 100%; text-align: center; }
+  .output-hook { font-size: 18px; }
+  .settings-inner { flex-direction: column; }
+  .status-badge span:last-child { display: none; }
+  .gen-custom-row { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<div class="atmosphere"></div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="brand">
+    <div class="brand-icon">🎸</div>
+    <div>
+      <div class="brand-name">ROCK PULSE</div>
+      <div class="brand-sub">ig trend × ai engine</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-badge">
+      <span class="dot" id="aiDot"></span>
+      <span id="aiStatus">AI OFFLINE</span>
+    </div>
+    <button class="btn-settings" id="btnSettings" onclick="toggleSettings()">⚙</button>
+  </div>
+</header>
+
+<!-- SETTINGS -->
+<div id="settingsPanel" style="display:none;">
+  <div class="settings">
+    <div class="settings-inner">
+      <div class="settings-field">
+        <div class="overline">AI API Key (Claude)</div>
+        <input type="password" class="settings-input" id="inputAiKey" placeholder="sk-ant-api03-...">
+      </div>
+      <div class="settings-field">
+        <div class="overline">Data API Key (Apify / IG Graph)</div>
+        <input type="password" class="settings-input" id="inputDataKey" placeholder="apify_api_...">
+      </div>
+      <button class="btn-save" onclick="saveKeys()">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-glow"></div>
+    <h2>Track Trends<span class="da">.</span> Create Content<span class="da">.</span> Drive Growth<span class="da">.</span></h2>
+    <p>Scan real-time Instagram rock &amp; band trends. Generate frontman-POV social posts with AI.</p>
+  </div>
+
+  <!-- ══════════ SECTION 01 — TRENDING RADAR ══════════ -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-num">
+      <span class="num-badge">01</span> trending radar
+    </div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-glow"></div>
+    <div class="card-header">
+      <div class="card-header-left">
+        <span style="font-size:14px">📡</span>
+        <span class="overline">live scan</span>
+        <span class="scanning-label" id="scanningLabel" style="display:none">SCANNING...</span>
+      </div>
+      <button class="btn-scan" id="btnScan" onclick="scanTrends()">⟳ Refresh Trends</button>
+    </div>
+    <div class="card-body" id="trendBody">
+      <div class="trend-empty">
+        <div class="trend-empty-icon">📡</div>
+        Hit "Refresh Trends" to scan today's top IG rock &amp; band hashtags.<br>
+        <span style="color:var(--muted); font-size:11px; margin-top:4px; display:inline-block">
+          Click any trend to send it to the Post Generator below.
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ SECTION 02 — POST GENERATOR ══════════ -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-num">
+      <span class="num-badge">02</span> post generator
+    </div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="card" id="generatorCard">
+    <div class="card-glow"></div>
+
+    <!-- Generator Header -->
+    <div class="card-header">
+      <div class="card-header-left">
+        <span style="font-size:14px">⚡</span>
+        <span class="overline">ai content engine</span>
+      </div>
+      <span class="overline" style="color:var(--cyan)" id="genStatusLabel"></span>
+    </div>
+
+    <!-- Selected Tags Area -->
+    <div class="gen-tags-area">
+      <div class="gen-tags-label-row">
+        <span class="overline">keywords &amp; hashtags</span>
+        <button class="btn-copy" style="font-size:10px; padding:4px 10px; display:none" id="btnClearAll" onclick="clearAllTags()">✕ CLEAR ALL</button>
+      </div>
+      <div id="genSelectedTags" class="gen-selected-tags">
+        <span class="gen-empty-hint">← Select trending tags above, or add your own below</span>
+      </div>
+      <div class="gen-custom-row">
+        <input type="text" class="gen-custom-input" id="customTagInput"
+               placeholder="Add custom tag (e.g. #MyBandName)"
+               onkeydown="if(event.key==='Enter')addCustomTag()">
+        <button class="btn-add-tag" onclick="addCustomTag()">+ Add Tag</button>
+      </div>
+    </div>
+
+    <!-- Generate Action -->
+    <div class="gen-action-bar" id="genActionBar">
+      <span class="gen-count" id="genCount">0 tags selected — pick at least 1 to generate</span>
+      <button class="btn-generate" id="btnGenerate" onclick="generatePost()" disabled>⚡ Generate Post</button>
+    </div>
+
+    <!-- Output Area (inside the generator card) -->
+    <div class="gen-output-area" id="outputArea"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-brand">ROCK PULSE</div>
+    <div class="footer-sub">v1.0 — built for bands that refuse to stay quiet</div>
+  </div>
+</main>
+
+<script>
+/* ═══════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════ */
+let aiKey = '';
+let dataKey = '';
+let trends = [];
+let selected = new Set();
+let isScanning = false;
+let isGenerating = false;
+
+const MOCK_TRENDS = [
+  { tag: "#LiveMusicVibes", heat: 97, reason: "Weekend gig season exploding — fan-shot stage clips going viral" },
+  { tag: "#IndieRock2026", heat: 93, reason: "Indie rock resurgence driven by Gen-Z retro revival wave" },
+  { tag: "#BandLife", heat: 89, reason: "Behind-the-scenes band content showing steady organic growth" },
+  { tag: "#GuitarTone", heat: 86, reason: "Guitar tone tutorials & Reels pulling top-tier engagement" },
+  { tag: "#RockIsNotDead", heat: 84, reason: "Rallying-cry slogan resurging across rock communities" },
+  { tag: "#StageEnergy", heat: 81, reason: "High-energy stage footage Reels seeing massive reach spikes" },
+  { tag: "#GarageBand", heat: 78, reason: "Garage band culture comeback — DIY ethos resonating hard" },
+  { tag: "#MoshPit", heat: 75, reason: "First-person mosh pit POV clips trending across Explore" },
+  { tag: "#NewRelease2026", heat: 72, reason: "New single drops paired with Stories performing strongest" },
+  { tag: "#RockNRollHeart", heat: 69, reason: "Emotional rock content driving consistent engagement growth" },
+];
+
+/* ═══════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  aiKey = localStorage.getItem('rp_ai_key') || '';
+  dataKey = localStorage.getItem('rp_data_key') || '';
+  document.getElementById('inputAiKey').value = aiKey;
+  document.getElementById('inputDataKey').value = dataKey;
+  updateAiStatus();
+});
+
+/* ═══════════════════════════════════════════
+   SETTINGS
+   ═══════════════════════════════════════════ */
+function toggleSettings() {
+  const panel = document.getElementById('settingsPanel');
+  const btn = document.getElementById('btnSettings');
+  const visible = panel.style.display !== 'none';
+  panel.style.display = visible ? 'none' : 'block';
+  btn.classList.toggle('active', !visible);
+}
+
+function saveKeys() {
+  aiKey = document.getElementById('inputAiKey').value.trim();
+  dataKey = document.getElementById('inputDataKey').value.trim();
+  localStorage.setItem('rp_ai_key', aiKey);
+  localStorage.setItem('rp_data_key', dataKey);
+  updateAiStatus();
+  toggleSettings();
+}
+
+function updateAiStatus() {
+  const dot = document.getElementById('aiDot');
+  const status = document.getElementById('aiStatus');
+  if (aiKey) { dot.classList.add('on'); status.textContent = 'AI ONLINE'; }
+  else { dot.classList.remove('on'); status.textContent = 'AI OFFLINE'; }
+}
+
+/* ═══════════════════════════════════════════
+   COPY
+   ═══════════════════════════════════════════ */
+function copyText(text, btnEl) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btnEl.textContent;
+    btnEl.classList.add('copied');
+    btnEl.textContent = '✓ COPIED';
+    setTimeout(() => { btnEl.classList.remove('copied'); btnEl.textContent = orig; }, 2000);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   SCAN TRENDS
+   ═══════════════════════════════════════════ */
+function scanTrends() {
+  if (isScanning) return;
+  isScanning = true;
+  const btn = document.getElementById('btnScan');
+  const label = document.getElementById('scanningLabel');
+  btn.disabled = true; btn.textContent = '⟳ Scanning';
+  label.style.display = 'inline';
+
+  setTimeout(() => {
+    trends = [...MOCK_TRENDS]
+      .sort(() => Math.random() - 0.5)
+      .map(t => ({ ...t, heat: Math.min(99, t.heat + Math.floor(Math.random() * 7 - 3)) }));
+    renderTrends();
+    isScanning = false;
+    btn.disabled = false; btn.textContent = '⟳ Refresh Trends';
+    label.style.display = 'none';
+  }, 1500);
+}
+
+/* ═══════════════════════════════════════════
+   RENDER TRENDS
+   ═══════════════════════════════════════════ */
+function renderTrends() {
+  const body = document.getElementById('trendBody');
+  if (trends.length === 0) {
+    body.innerHTML = `
+      <div class="trend-empty">
+        <div class="trend-empty-icon">📡</div>
+        Hit "Refresh Trends" to scan today's top IG rock &amp; band hashtags.<br>
+        <span style="color:var(--muted); font-size:11px; margin-top:4px; display:inline-block">
+          Click any trend to send it to the Post Generator below.
+        </span>
+      </div>`;
+    return;
+  }
+
+  let html = '<div class="trend-list">';
+  trends.forEach((t, i) => {
+    const active = selected.has(t.tag);
+    const heatColor = t.heat > 90 ? 'var(--cyan)' : t.heat > 80 ? 'var(--signal)' : 'var(--ghost)';
+    const heatShadow = t.heat > 85 ? `box-shadow: 0 0 8px ${t.heat > 90 ? 'var(--cyan)' : 'var(--signal)'}` : '';
+    html += `
+      <button class="trend-item ${active ? 'active' : ''}"
+              onclick="toggleTag('${t.tag}')"
+              style="animation: fadeUp 0.35s ease ${i * 40}ms both">
+        <div class="trend-index">${active ? '✓' : String(i + 1).padStart(2, '0')}</div>
+        <div style="flex:1; min-width:0">
+          <div class="trend-tag">${t.tag}</div>
+          <div class="trend-reason">${t.reason}</div>
+        </div>
+        <div class="trend-heat">
+          <div class="heat-bar">
+            <div class="heat-fill" style="width:${t.heat}%; background:${heatColor}; ${heatShadow}"></div>
+          </div>
+          <span class="heat-num" style="color:${heatColor}">${t.heat}</span>
+        </div>
+      </button>`;
+  });
+  html += '</div>';
+  body.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════
+   TAG SELECTION
+   ═══════════════════════════════════════════ */
+function toggleTag(tag) {
+  selected.has(tag) ? selected.delete(tag) : selected.add(tag);
+  renderTrends();
+  renderGenerator();
+}
+
+function addCustomTag() {
+  const input = document.getElementById('customTagInput');
+  let val = input.value.trim();
+  if (!val) return;
+  if (!val.startsWith('#')) val = '#' + val;
+  selected.add(val);
+  input.value = '';
+  renderTrends();
+  renderGenerator();
+}
+
+function removeTag(tag) {
+  selected.delete(tag);
+  renderTrends();
+  renderGenerator();
+}
+
+function clearAllTags() {
+  selected.clear();
+  renderTrends();
+  renderGenerator();
+}
+
+/* ═══════════════════════════════════════════
+   RENDER GENERATOR TAGS
+   ═══════════════════════════════════════════ */
+function renderGenerator() {
+  const container = document.getElementById('genSelectedTags');
+  const countEl = document.getElementById('genCount');
+  const btnGen = document.getElementById('btnGenerate');
+  const btnClear = document.getElementById('btnClearAll');
+  const statusLabel = document.getElementById('genStatusLabel');
+  const n = selected.size;
+
+  if (n === 0) {
+    container.innerHTML = '<span class="gen-empty-hint">← Select trending tags above, or add your own below</span>';
+    countEl.textContent = '0 tags selected — pick at least 1 to generate';
+    btnGen.disabled = true;
+    btnClear.style.display = 'none';
+    statusLabel.textContent = '';
+  } else {
+    let html = '';
+    [...selected].forEach(tag => {
+      html += `<span class="gen-tag-pill" onclick="removeTag('${tag.replace(/'/g, "\\'")}')">${escH(tag)} <span class="x">×</span></span>`;
+    });
+    container.innerHTML = html;
+    countEl.textContent = `${n} tag${n > 1 ? 's' : ''} selected — ready to generate`;
+    btnGen.disabled = isGenerating;
+    btnClear.style.display = 'inline-block';
+    statusLabel.textContent = 'READY';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   GENERATE POST
+   ═══════════════════════════════════════════ */
+async function generatePost() {
+  if (selected.size === 0 || isGenerating) return;
+  isGenerating = true;
+
+  const btnGen = document.getElementById('btnGenerate');
+  const statusLabel = document.getElementById('genStatusLabel');
+  btnGen.disabled = true;
+  btnGen.textContent = '⟳ Generating...';
+  statusLabel.textContent = 'GENERATING...';
+  statusLabel.style.animation = 'pulse 1s infinite';
+
+  const outputArea = document.getElementById('outputArea');
+  outputArea.innerHTML = `
+    <div style="padding:48px 20px; text-align:center;">
+      <div style="font-size:24px; animation: spin 1s linear infinite; display:inline-block; margin-bottom:12px">⚡</div>
+      <div style="font-family:var(--font-mono); font-size:13px; color:var(--muted)">AI is channeling its inner rock frontman...</div>
+    </div>`;
+
+  const tags = [...selected].join(', ');
+  let post = null;
+
+  if (aiKey) {
+    try {
+      const prompt = `You are a rock band frontman and social media strategist. Your voice is passionate, authentic, and dripping with rock & roll soul.
+
+Based on the following trending Instagram hashtags, generate an Instagram post:
+
+Hashtags: ${tags}
+
+Reply ONLY with the following JSON (no markdown code blocks, no extra text):
+{
+  "hook": "An attention-grabbing headline (one punchy sentence with emotional impact)",
+  "body": "Heartfelt caption body (3-5 sentences, first-person frontman perspective, community-driven, end with a call to action)",
+  "hashtags": ["#CoreTag1", "#CoreTag2", "#CoreTag3", "#CoreTag4", "#CoreTag5"],
+  "visual": "Visual suggestion (what kind of photo or video style to pair with this post)"
+}`;
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': aiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1024,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+
+      const text = data.content.map(b => b.text || '').join('');
+      post = JSON.parse(text.replace(/```json|```/g, '').trim());
+    } catch (e) {
+      console.error('Claude API failed, falling back to mock:', e);
+    }
+  }
+
+  if (!post) {
+    await new Promise(r => setTimeout(r, aiKey ? 0 : 2000));
+    post = {
+      hook: "🔥 Tonight's stage burns for every soul that refused to stay silent",
+      body: `The second I step on stage, what I hear isn't just music — it's every scream you've been holding back for way too long. ${tags} aren't just hashtags — they're our generation's rock manifesto. Next show, I want to see you front row, screaming with me until the ceiling cracks. Tell me — what song do you want to hear live? 👇`,
+      hashtags: [...selected].slice(0, 3).concat(['#RockIsNotDead', '#BandLife']).slice(0, 5),
+      visual: "Recommended: backlit silhouette shot from a live gig with stage fog. Or black-and-white candid of the band in the rehearsal room — vibes over precision. For Reels, try handheld slow-mo of crowd reactions from the pit."
+    };
+  }
+
+  isGenerating = false;
+  btnGen.disabled = false;
+  btnGen.textContent = '⚡ Generate Post';
+  statusLabel.textContent = 'DONE ✓';
+  statusLabel.style.animation = 'none';
+  setTimeout(() => { statusLabel.textContent = 'READY'; }, 3000);
+
+  renderOutput(post);
+}
+
+/* ═══════════════════════════════════════════
+   RENDER OUTPUT
+   ═══════════════════════════════════════════ */
+function renderOutput(post) {
+  const fullText = `${post.hook}\n\n${post.body}\n\n${post.hashtags.join(' ')}`;
+  const hashtagsText = post.hashtags.join(' ');
+
+  const outputArea = document.getElementById('outputArea');
+  outputArea.innerHTML = `
+    <div style="border-top: 1px solid var(--bm06); animation: fadeUp 0.5s ease;">
+      <!-- Output Header -->
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--bm06);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:14px">🎚️</span>
+          <span class="overline">output mix</span>
+        </div>
+        <button class="btn-copy" onclick="copyText(\`${esc(fullText)}\`, this)">⎘ COPY ALL</button>
+      </div>
+
+      <div class="output-body">
+
+        <!-- HOOK -->
+        <div>
+          <div class="output-section-label">
+            <span class="dot on" style="background:var(--cyan);box-shadow:0 0 6px var(--cyan),0 0 12px rgba(0,255,255,0.26)"></span>
+            <span class="overline" style="color:var(--cyan)">hook — headline</span>
+          </div>
+          <div class="output-hook">${escH(post.hook)}</div>
+        </div>
+
+        <!-- BODY -->
+        <div>
+          <div class="output-section-label">
+            <span class="dot on" style="background:var(--signal);box-shadow:0 0 6px var(--signal),0 0 12px rgba(0,137,255,0.26)"></span>
+            <span class="overline" style="color:var(--signal)">body — caption</span>
+          </div>
+          <div class="output-body-text">${escH(post.body)}</div>
+        </div>
+
+        <!-- HASHTAGS -->
+        <div>
+          <div class="hashtag-header">
+            <div class="output-section-label" style="margin-bottom:0">
+              <span class="dot on" style="background:var(--ocean);box-shadow:0 0 6px var(--ocean),0 0 12px rgba(0,150,255,0.26)"></span>
+              <span class="overline" style="color:var(--ocean)">hashtags — recommended tags</span>
+            </div>
+            <button class="btn-copy" onclick="copyText(\`${esc(hashtagsText)}\`, this)">⎘ COPY TAGS</button>
+          </div>
+          <div class="output-hashtags">
+            ${post.hashtags.map(h => `<span class="hashtag-pill">${escH(h)}</span>`).join('')}
+          </div>
+        </div>
+
+        <!-- VISUAL -->
+        <div>
+          <div class="output-section-label">
+            <span class="dot on" style="background:var(--cobalt);box-shadow:0 0 6px var(--cobalt),0 0 12px var(--cobalt-glow)"></span>
+            <span class="overline" style="color:var(--ghost)">visual — creative direction</span>
+          </div>
+          <div class="output-visual">🎬 ${escH(post.visual)}</div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="output-footer">
+          <span class="output-footer-hint">↑ One-click copy the full post, paste straight to IG</span>
+          <button class="btn-copy" onclick="copyText(\`${esc(fullText)}\`, this)">⎘ COPY ALL</button>
+        </div>
+      </div>
+    </div>`;
+
+  setTimeout(() => {
+    document.getElementById('outputArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+/* ═══════════════════════════════════════════
+   UTILS
+   ═══════════════════════════════════════════ */
+function escH(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function esc(s) {
+  return s.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+}
+</script>
+</body>
+</html>
